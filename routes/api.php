@@ -18,7 +18,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('register', [AuthController::class, 'register'])->middleware('throttle:5,1');
 Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
-
+// Content Browsing (Student)
+Route::get('subjects', [SubjectController::class, 'index']);
+Route::get('subjects/{subject}/units', [UnitController::class, 'index']);
+Route::get('units/{unit}/lessons', [LessonController::class, 'index']);
+Route::get('lesson/{lesson}/subtopics', [SubtopicController::class, 'index']);
+// 
+Route::get('subjects/{subject}/teachers', [TeacherController::class, 'index']);
+Route::get('teachers/{teacher}/lessons', [TeacherController::class, 'show']);
+// 
+Route::get('teachers/{teacher}/lessons/{lesson}/content', [TeacherController::class, 'showContent'])->scopeBindings();
 // Apply middleware to all routes
 Route::middleware('auth:api')->group(function () {
     // Auth routes
@@ -26,11 +35,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('me', [AuthController::class, 'me']);
     Route::put('user', [AuthController::class, 'updateProfile']); // New: Profile update
 
-    // Content Browsing (Student)
-    Route::get('subjects', [SubjectController::class, 'index']);
-    Route::get('subjects/{subject}/units', [UnitController::class, 'index']);
-    Route::get('units/{unit}/lessons', [LessonController::class, 'index']);
-    Route::get('lesson/{lesson}/subtopics',[SubtopicController::class,'index']);
+
     // Route::get('lessons/{lesson}', [LessonController::class, 'show']);
 
     // Teacher Content Management (already existed, scoped in controller)
@@ -44,9 +49,8 @@ Route::middleware('auth:api')->group(function () {
     // Route::get('attempts/{attempt}/results', [QuizAttemptController::class, 'results'])->middleware(['role:student']);
 
     // Legacy / Other
-    Route::get('subjects/{subject}/teachers', [TeacherController::class, 'index']);
-    Route::get('teachers/{teacher}/lessons', [TeacherController::class, 'show']);
-    Route::get('teachers/{teacher}/lessons/{lesson}/content', [TeacherController::class, 'showContent'])->scopeBindings();
+
+   
     Route::get('quizzes-details/{quiz}', [TeacherController::class, 'showQuiz'])->scopeBindings();
     Route::post('quiz/{quiz}/answer', [StudentAnswerController::class, 'answer'])->middleware(['role:student']);
     Route::get('students/attempts', [QuizAttemptController::class, 'index'])->middleware(['role:student']);
