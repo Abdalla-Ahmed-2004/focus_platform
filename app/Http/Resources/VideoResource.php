@@ -15,7 +15,7 @@ class VideoResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $student=JWTAuth::user()->student;
+        if ($student=JWTAuth::user()->student) {
         $quizzes=$this->quizzes;
         $quiz_attempted=[];
         foreach ($quizzes as $quiz) {
@@ -25,6 +25,19 @@ class VideoResource extends JsonResource
             else{
                 $quiz_attempted['quiz_'.$quiz->id]=false;
             }
+        }
+            return [
+                'lesson_id' => $this->lesson->id,
+                'lesson_title' => $this->lesson->title,
+                'video_id' => $this->id,
+                'video_title' => $this->title,
+                'video_url' => $this->url,
+                'created_at' => $this->created_at->format('Y-m-d h:i:s'),
+                // 'quizzes'=>new quizCollection($this->quizzes)
+                'quizzes_count' => $this->quizzes->count(),
+                'quizzes' => $this->quizzes->pluck('id')->toArray(),
+                "quiz_attempted" => $quiz_attempted,
+            ];
         }
         return [
             'lesson_id' => $this->lesson->id,
@@ -36,7 +49,7 @@ class VideoResource extends JsonResource
             // 'quizzes'=>new quizCollection($this->quizzes)
             'quizzes_count' => $this->quizzes->count(),
             'quizzes' => $this->quizzes->pluck('id')->toArray(),
-            "quiz_attempted"=>$quiz_attempted,
+            
         ];
     }
 }
