@@ -73,10 +73,10 @@ class StudentAnswerController extends Controller
             'student_id' => $student->id,
             'score' => $score,
         ]);
-        $s_q_answers = StudentAnswer::where('quiz_id', $quiz->id)->where('student_id', $student->id)->paginate(10);
-
+        $s_q_answers = StudentAnswer::where('quiz_id', $quiz->id)->where('student_id', $student->id)->get();
+        
         return response()->json([
-            'answers' => (new StudentAnswerCollection($s_q_answers))->response()->getData(true),
+            'student_answers' => (new StudentAnswerCollection($s_q_answers)),
             'score' => $score
         ]);
     }
@@ -127,7 +127,7 @@ class StudentAnswerController extends Controller
         //     ]
         // );
 
-        return response()->json(['message' => 'Answer saved', 'answers' => $answers['answers'], 'score' => $score]);
+        return response()->json(['message' => 'Answer saved', 'answers' => $answers['answers'],'correct_answers_quiz' => $quiz->questions()->get(['id','question', 'correct_answer']), 'score' => $score]);
     }
 
     /**

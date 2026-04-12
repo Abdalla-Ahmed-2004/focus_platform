@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\QuizAttemptController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\StudentAnswerController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\SubtopicController;
@@ -28,6 +29,8 @@ Route::get('subjects/{subject}/teachers', [TeacherController::class, 'index']);
 Route::get('teachers/{teacher}/lessons', [TeacherController::class, 'show']);
 // 
 Route::get('teachers/{teacher}/lessons/{lesson}/content', [TeacherController::class, 'showContent'])->scopeBindings();
+
+Route::get('search/teachers', [SearchController::class, 'search']);
 // Apply middleware to all routes
 Route::middleware('auth:api')->group(function () {
     // Auth routes
