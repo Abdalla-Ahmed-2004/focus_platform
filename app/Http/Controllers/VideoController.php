@@ -47,6 +47,8 @@ class VideoController extends Controller
                 'lesson_id' => $request->input('lesson_id'),
                 'title' => $request->input('title'),
                 'url' => $path,
+                'duration' =>$request->input('duration', null),
+                'views' => 0,
             ]);
 
             return response()->json($video, 201);

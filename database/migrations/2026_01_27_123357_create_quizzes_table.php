@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('quizzes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('lesson_id')->constrained();
+            $table->foreignId('lesson_id')->constrained() ->onDelete('cascade');
             $table->foreignId('teacher_id')->constrained()->onDelete('cascade');
-            $table->foreignId('video_id')->constrained();
+            $table->foreignId('video_id')->constrained() ->onDelete('cascade');
             $table->timestamps();
         });
     }
