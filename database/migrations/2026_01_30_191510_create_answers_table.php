@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('answers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('quiz_id')->constrained();
-            $table->foreignId('student_id')->constrained();
-            $table->foreignId('question_id')->constrained();
+            $table->foreignId('quiz_id')->constrained() ->onDelete('cascade');
+            $table->foreignId('student_id')->constrained()  ->onDelete('cascade');
+            $table->foreignId('question_id')->constrained()->onDelete('cascade');
             $table->string('answer_text');
             $table->boolean('correctness');
             $table->timestamps();
