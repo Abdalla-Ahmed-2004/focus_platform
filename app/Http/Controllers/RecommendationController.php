@@ -10,6 +10,7 @@ use App\Models\Subtopic;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Http;
 use App\Models\StudentSubtopicEvaluation;
+use Illuminate\Http\Request;
 
 class RecommendationController extends Controller
 {
@@ -66,7 +67,7 @@ class RecommendationController extends Controller
     {
         $student = JWTAuth::user()->student;
 
-        $answers = request()->input('answers');
+        $answers = Request()->input('answers');
         $results = [];
 
         // Save submitted answers
