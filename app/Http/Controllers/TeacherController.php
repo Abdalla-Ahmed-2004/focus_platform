@@ -131,25 +131,38 @@ class TeacherController extends Controller
         $teacher = JWTAuth::user()->teacher;
         $cacheKey = 'teacher:dashboard:' . $teacher->id;
 
+        // $videos_count = $teacher->videos()->count();
+        // $quizzes_count = $teacher->quizzes()->count();
+        // $quizzes_attempted = $teacher->quizzes()->withCount('quizzesAttempt')->get();
+        // $quizzes_attempted = $quizzes_attempted->map(function ($quiz) {
+        //     $quiz->average_score = $quiz->quizzesAttempt()->sum('score') /($quiz->quizzesAttempt()->join('quizzes', 'quizzes.id', '=', 'quiz_attempts.quiz_id')->sum('quizzes.total_marks') ?: 1) * 100;
+        //     return $quiz;
+        // });
+        // return $quizzes_attempted;
         $data = cache()->remember($cacheKey, 900, function () use ($teacher) {
             $videos_count = $teacher->videos()->count();
             $quizzes_count = $teacher->quizzes()->count();
+            $quizzes_attempted = $teacher->quizzes()->withCount('quizzesAttempt')->get();
+            $quizzes_attempted = $quizzes_attempted->map(function ($quiz) {
+                $score = ($quiz->quizzesAttempt()->sum('score') / ($quiz->quizzesAttempt()->join('quizzes', 'quizzes.id', '=', 'quiz_attempts.quiz_id')->sum('quizzes.total_marks') ?: 1) * 100);
+                $quiz->average_score = (int) ceil($score);
+                return $quiz;
+            });
+            // $students_points = QuizAttempt::whereHas('quiz', function ($q) use ($teacher) {
+            //     $q->where('teacher_id', $teacher->id);
+            // })->select('score')->sum('score');
 
-            $students_points = QuizAttempt::whereHas('quiz', function ($q) use ($teacher) {
-                $q->where('teacher_id', $teacher->id);
-            })->select('score')->sum('score');
+            // $all_possible_points = QuizAttempt::whereHas('quiz', function ($q) use ($teacher) {
+            //     $q->where('teacher_id', $teacher->id);
+            // })->with('quiz')->get()->sum('quiz.total_marks');
 
-            $all_possible_points = QuizAttempt::whereHas('quiz', function ($q) use ($teacher) {
-                $q->where('teacher_id', $teacher->id);
-            })->with('quiz')->get()->sum('quiz.total_marks');
-
-            $percentage = $quizzes_count > 0 && $all_possible_points > 0 ? round($students_points / $all_possible_points, 2) * 100 : 0;
+            // $percentage = $quizzes_count > 0 && $all_possible_points > 0 ? round($students_points / $all_possible_points, 2) * 100 : 0;
 
             return [
                 'videos_count' => $videos_count,
                 'quizzes_count' => $quizzes_count,
-                'average_score' => $percentage . '%',
-                'quiz_attempts_count' => $teacher->quizzes()->withCount('quizzesAttempt')->get(),
+                'quizzes_attempted' => $quizzes_attempted,
+
                 'student_attempts' => $teacher->lessonAttempts()->orderBy('student_id')->get(),
             ];
         });
@@ -158,8 +171,8 @@ class TeacherController extends Controller
             'teacher' => (new TeacherResource($teacher)),
             'videos_count' => $data['videos_count'],
             'quizzes_count' => $data['quizzes_count'],
-            'average_score' => $data['average_score'],
-            'quiz_attempts_count' => $data['quiz_attempts_count'],
+            'quizzes_attempted' => $data['quizzes_attempted'],
+
             'student_attempts' => new LessonAttemptCollection($data['student_attempts']),
         ]);
     }

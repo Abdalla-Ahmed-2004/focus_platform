@@ -29,46 +29,22 @@ class StudentController extends Controller
         $student = JWTAuth::user()->student;
         $cacheKey = 'student:dashboard:' . $student->id;
 
-        $data = Cache::remember($cacheKey, 900, function () use ($student) {
-            $lesson_attempts = $student->lessonAttempts()->where('quiz_attempted', true)->orderBy('created_at', 'desc')->get();
-
-            $formatted_lessons = $lesson_attempts->map(function ($attempt) use ($student) {
-                $score = $attempt->quiz_id ? $student->quizzesAttempt()->where('quiz_id', $attempt->quiz_id)->value('score') : null;
-                $total_marks = $attempt->quiz_id ? $attempt->quiz->total_marks : null;
-                return [
-                    'teacher_id' => $attempt->teacher_id,
-                    'lesson_id' => $attempt->lesson_id,
-                    'video_id' => $attempt->video_id,
-                    'teacher_name' => collect($attempt->teacher->user)->get('name') ?? 'Unknown Teacher',
-                    'lesson_title' => $attempt->lesson->title ?? null,
-                    'video_title' => $attempt->video->title ?? null,
-                    'quiz_title' => $attempt->quiz ? $attempt->quiz->title : null,
-                    'profile_picture' => collect($attempt->teacher->user)->get('profile_picture'),
-                    'score' => $score,
-                    'total_marks' => $total_marks,
-                    'attempted_at' => $attempt->created_at->format('Y-m-d H:i:s'),
-                ];
-            });
-
-            return [
-                'lesson_attempts_completed_count' => $lesson_attempts->count(),
-                'lesson_attempts' => $formatted_lessons,
-                'subtopic_evaluations' => $student->subtopicEvaluations()
-                    ->with('subtopic')
-                    ->latest()
-                    ->get()
-                    ->unique('subtopic_id')
-                    ->values()
-            ];
-        });
-
-        return response()->json([
-            'message' => 'Student dashboard data retrieved successfully',
-            'student' => new StudentResource($student),
-            'lesson_attempts_completed_count' => $data['lesson_attempts_completed_count'],
-            'lesson_attempts' => $data['lesson_attempts'],
-            'subtopic_evaluations' => $data['subtopic_evaluations']
-        ]);
+        $lessonAttempts = $student->lessonAttempts();
+        $student_evaluations = $student->subtopicEvaluations();
+        // return [$student_evaluations, $lessonAttempts];
+    $data=Cache::remember($cacheKey, 900, function () use ($student, $lessonAttempts, $student_evaluations) {
+       
+        return [
+                'lessonAttempts'=> $lessonAttempts,
+                'subtopicEvaluations'=>$student_evaluations
+        ];
+    });
+    return response()->json([
+        'message' => 'Student dashboard data retrieved successfully',
+        'student' => new StudentResource($student),
+        'lesson_attempts' => $data['lessonAttempts'],
+        'subtopic_evaluations' => $data['subtopicEvaluations']
+    ]);
     }
 
     /**

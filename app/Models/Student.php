@@ -32,6 +32,18 @@ class Student extends Model
 
     public function lessonAttempts()
     {
+        $lessons = $this->hasMany(LessonAttempt::class);
+    $subject_lessons = $lessons->join('lessons', 'lesson_attempts.lesson_id', '=', 'lessons.id')
+    ->join('units', 'lessons.unit_id', '=', 'units.id')
+    ->join('subjects', 'units.subject_id', '=', 'subjects.id')
+    ->where('quiz_attempted', true)
+    ->select('lesson_attempts.lesson_id','lesson_attempts.video_id','lesson_attempts.teacher_id','lesson_attempts.quiz_id', 'lessons.title as lesson_title', 'subjects.title as subject_title', 'subjects.code as subject_code')->get();
+        $grouped = $subject_lessons->groupBy('subject_code')->map(function ($items) {
+            return $items->values();
+        });
+    return $grouped;
+        //  
+
         return $this->hasMany(LessonAttempt::class);
     }
 
@@ -47,6 +59,15 @@ class Student extends Model
 
     public function subtopicEvaluations()
     {
-        return $this->hasMany(StudentSubtopicEvaluation::class);
+        $subtopic_evaluations = $this->hasMany(StudentSubtopicEvaluation::class);
+            $grouped=$subtopic_evaluations->join('subtopics', 'student_subtopic_evaluations.subtopic_id', '=', 'subtopics.id')
+            ->join('lessons', 'subtopics.lesson_id', '=', 'lessons.id')
+            ->join('units', 'lessons.unit_id', '=', 'units.id')
+            ->join('subjects', 'units.subject_id', '=', 'subjects.id')->select('student_subtopic_evaluations.*', 'subtopics.title as subtopic_title', 'lessons.title as lesson_title', 'units.title as unit_title', 'subjects.title as subject_title', 'subjects.code as code')->latest('student_subtopic_evaluations.created_at')->get()->unique('subtopic_id');
+           
+
+            
+            return $grouped->groupBy('code');
+     
     }
 }
