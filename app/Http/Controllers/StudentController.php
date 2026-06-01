@@ -31,7 +31,11 @@ class StudentController extends Controller
 
         $lessonAttempts = $student->lessonAttempts();
         $student_evaluations = $student->subtopicEvaluations()->latest('created_at')->get()->unique('subtopic_id')->groupBy('code');
+
         $quizAttempts = $student->quizzesAttempt()->with('quiz')->latest('created_at')->get();
+
+
+        
         // return [$student_evaluations, $lessonAttempts];
     $data=Cache::remember($cacheKey, 900, function () use ($student, $lessonAttempts, $student_evaluations, $quizAttempts) {
        
@@ -39,6 +43,7 @@ class StudentController extends Controller
                 'lessonAttempts'=> $lessonAttempts,
                 'subtopicEvaluations'=>$student_evaluations,
                 'quizAttempts' => $quizAttempts,
+                'quizAttempts_count' => $quizAttempts->count(),
         ];
     });
     return response()->json([
@@ -46,7 +51,8 @@ class StudentController extends Controller
         'student' => new StudentResource($student),
         'lesson_attempts' => $data['lessonAttempts'],
         'subtopic_evaluations' => $data['subtopicEvaluations'],
-        'quiz_attempts' => $data['quizAttempts'],   
+        'quiz_attempts' => $data['quizAttempts'],
+        'quiz_attempts_count' => $data['quizAttempts_count'],
     ]);
     }
 

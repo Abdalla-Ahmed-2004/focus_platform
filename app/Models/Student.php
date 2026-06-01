@@ -63,7 +63,7 @@ class Student extends Model
             $grouped=$subtopic_evaluations->join('subtopics', 'student_subtopic_evaluations.subtopic_id', '=', 'subtopics.id')
             ->join('lessons', 'subtopics.lesson_id', '=', 'lessons.id')
             ->join('units', 'lessons.unit_id', '=', 'units.id')
-            ->join('subjects', 'units.subject_id', '=', 'subjects.id')->select('student_subtopic_evaluations.*', 'subtopics.title as subtopic_title', 'lessons.title as lesson_title', 'units.title as unit_title', 'subjects.title as subject_title', 'subjects.code as code')->latest('student_subtopic_evaluations.created_at');
+            ->join('subjects', 'units.subject_id', '=', 'subjects.id')->select('student_subtopic_evaluations.id as id','student_subtopic_evaluations.*', 'subtopics.title as subtopic_title', 'lessons.title as lesson_title', 'units.title as unit_title', 'subjects.title as subject_title', 'subjects.code as code')->latest('student_subtopic_evaluations.created_at');
            
 
             
