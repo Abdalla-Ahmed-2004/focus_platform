@@ -44,7 +44,7 @@ class StudentAnswerController extends Controller
 
     public function answer(StoreStudentAnswerRequest $request, Quiz $quiz)
     {
-        // dd($quiz);
+        // return response()->json(['quiz' => $quiz]);
         $student = JWTAuth::user()->student;
         LessonAttempt::where('student_id', $student->id)
             ->where('lesson_id', $quiz->video->lesson_id)

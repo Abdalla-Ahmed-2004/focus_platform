@@ -30,20 +30,23 @@ class StudentController extends Controller
         $cacheKey = 'student:dashboard:' . $student->id;
 
         $lessonAttempts = $student->lessonAttempts();
-        $student_evaluations = $student->subtopicEvaluations();
+        $student_evaluations = $student->subtopicEvaluations()->latest('created_at')->get()->unique('subtopic_id')->groupBy('code');
+        $quizAttempts = $student->quizzesAttempt()->with('quiz')->latest('created_at')->get();
         // return [$student_evaluations, $lessonAttempts];
-    $data=Cache::remember($cacheKey, 900, function () use ($student, $lessonAttempts, $student_evaluations) {
+    $data=Cache::remember($cacheKey, 900, function () use ($student, $lessonAttempts, $student_evaluations, $quizAttempts) {
        
         return [
                 'lessonAttempts'=> $lessonAttempts,
-                'subtopicEvaluations'=>$student_evaluations
+                'subtopicEvaluations'=>$student_evaluations,
+                'quizAttempts' => $quizAttempts,
         ];
     });
     return response()->json([
         'message' => 'Student dashboard data retrieved successfully',
         'student' => new StudentResource($student),
         'lesson_attempts' => $data['lessonAttempts'],
-        'subtopic_evaluations' => $data['subtopicEvaluations']
+        'subtopic_evaluations' => $data['subtopicEvaluations'],
+        'quiz_attempts' => $data['quizAttempts'],   
     ]);
     }
 
@@ -320,7 +323,18 @@ class StudentController extends Controller
                 }
 
                 // dd($evaluation_ids);
-                return $student->subtopicEvaluations()->whereIn('subtopic_id', $quiz_subtopics)->whereIn('id', $evaluation_ids)->get()->map(function ($evaluation) use ($subtopics) {
+                // return $student->subtopicEvaluations()->whereIn('subtopic_id', $quiz_subtopics)->whereIn('id', $evaluation_ids)->map(function ($evaluation) use ($subtopics) {
+                //     return [
+                //         'subtopic_id' => $evaluation->subtopic_id,
+                //         'subtopic_difficulty' => $subtopics->get($evaluation->subtopic_id)->subtopic_difficulty ?? null,
+                //         'subtopic_title' => $subtopics->get($evaluation->subtopic_id)->title ?? 'Unknown',
+                //         'subtopic_evaluation' => $evaluation->subtopic_evaluation,
+                //         'evaluation_status' => $evaluation->evaluation_status,
+                //         'question_count' => $evaluation->question_count,
+                //         'correct_count' => $evaluation->correct_count,
+                //     ];
+                // });
+                return $student->subtopicEvaluations()->whereIn('subtopic_id',$quiz_subtopics)->latest('created_at')->get()->unique('subtopic_id')->map(function ($evaluation) use ($subtopics) {
                     return [
                         'subtopic_id' => $evaluation->subtopic_id,
                         'subtopic_difficulty' => $subtopics->get($evaluation->subtopic_id)->subtopic_difficulty ?? null,
