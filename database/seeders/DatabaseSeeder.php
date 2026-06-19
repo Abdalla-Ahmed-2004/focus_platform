@@ -24,12 +24,12 @@ class DatabaseSeeder extends Seeder
             UnitSeeder::class,
             LessonSeeder::class,
             SubtopicSeeder::class,
+            MahmoudMagdySeeder::class,
             TeacherSeeder::class,
             StudentSeeder::class,
             VideoSeeder::class,
             QuizSeeder::class,
             QuestionSeeder::class,
-            MahmoudMagdySeeder::class,
             StudentAnswerSeeder::class,
         ]);
 

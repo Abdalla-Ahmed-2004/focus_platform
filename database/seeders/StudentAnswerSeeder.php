@@ -25,8 +25,8 @@ class StudentAnswerSeeder extends Seeder
         }
 
         foreach ($students as $student) {
-            // Student randomly takes up to 3 quizzes
-            $takeCount = rand(1, min(3, $quizzes->count()));
+            $studentAccuracy = $faker->randomFloat(2, 0.45, 0.9);
+            $takeCount = rand(min(4, $quizzes->count()), min(8, $quizzes->count()));
             $randomQuizzes = $quizzes->random($takeCount);
 
             foreach ($randomQuizzes as $quiz) {
@@ -37,7 +37,6 @@ class StudentAnswerSeeder extends Seeder
                 $answersData = [];
 
                 foreach ($questions as $question) {
-                    // Answer text picked randomly from options. Correctness evaluated.
                     $options = array_filter([
                         $question->option_1,
                         $question->option_2,
@@ -49,7 +48,17 @@ class StudentAnswerSeeder extends Seeder
                         continue;
                     }
 
-                    $pickedAnswer = $faker->randomElement($options);
+                    $shouldBeCorrect = $faker->randomFloat(2, 0, 1) <= $studentAccuracy;
+
+                    if ($shouldBeCorrect && in_array($question->correct_answer, $options, true)) {
+                        $pickedAnswer = $question->correct_answer;
+                    } else {
+                        $wrongOptions = array_values(array_filter($options, fn($option) => $option !== $question->correct_answer));
+                        $pickedAnswer = !empty($wrongOptions)
+                            ? $faker->randomElement($wrongOptions)
+                            : $question->correct_answer;
+                    }
+
                     $isCorrect = ($pickedAnswer === $question->correct_answer);
 
                     if ($isCorrect) {

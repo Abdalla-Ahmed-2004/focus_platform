@@ -14,6 +14,10 @@ class QuizSeeder extends Seeder
     {
         $videos = \App\Models\Video::all();
         foreach ($videos as $video) {
+            if ($video->quizzes()->exists()) {
+                continue;
+            }
+
             Quiz::factory()->create([
                 'teacher_id' => $video->teacher_id,
                 'video_id' => $video->id,

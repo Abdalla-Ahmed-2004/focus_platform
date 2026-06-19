@@ -33,6 +33,10 @@ class Subtopic extends Model
     {
         return $this->hasMany(Video::class);
     }
+    public function students_answers()
+    {
+        return $this->hasMany(StudentAnswer::class);
+    }
     protected static function booted()
     {
         static::creating(function ($subtopic) {

@@ -7,6 +7,7 @@ use App\Http\Requests\StoreRecommendationRequest;
 use App\Http\Requests\UpdateRecommendationRequest;
 use App\Models\StudentAnswer;
 use App\Models\Subtopic;
+use App\Models\TsubtopicEvaluation;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Http;
 use App\Models\StudentSubtopicEvaluation;
@@ -21,14 +22,59 @@ class RecommendationController extends Controller
     {
         $student = JWTAuth::user()->student;
         $subtopic_student_status = $subtopic->studentEvaluations()->where('student_id', $student->id)->latest()->first();
-        $recommendation_videos = $subtopic->videos()->get();
+        $teacherEvaluations = TsubtopicEvaluation::query()
+            ->where('subtopic_id', $subtopic->id)
+            ->with([
+                'teacher.user',
+                'teacher.videos' => function ($query) use ($subtopic) {
+                    $query->where('subtopic_id', $subtopic->id);
+                },
+            ])
+            ->orderByDesc('evaluation_score')
+            // ->orderByDesc('correct_answers_count')
+            // ->orderByDesc('answers_count')
+            ->get();
+
+        $teacherRecommendations = $teacherEvaluations->map(function ($evaluation) {
+            $teacher = $evaluation->teacher;
+            $videos = ($teacher?->videos ?? collect())
+                ->where('subtopic_id', $evaluation->subtopic_id)
+                ->values();
+
+            return [
+                'teacher_id' => $teacher?->id,
+                'teacher_name' => $teacher?->user?->name,
+                'evaluation_score' => $evaluation->evaluation_score,
+                // 'answers_count' => $evaluation->answers_count,
+                // 'correct_answers_count' => $evaluation->correct_answers_count,
+                'videos' => $videos->map(function ($video) use ($evaluation, $teacher) {
+                    return [
+                        'id' => $video->id,
+                        'title' => $video->title,
+                        'url' => $video->url,
+                        'duration' => $video->duration,
+                        'thumbnail' => $video->thumbnail,
+                        'subtopic_id' => $video->subtopic_id,
+                        'teacher_id' => $teacher?->id,
+                        'teacher_name' => $teacher?->user?->name,
+                        'teacher_evaluation_score' => $evaluation->evaluation_score,
+                    ];
+                })->values(),
+            ];
+        })->values();
+
+        $recommendation_videos = $teacherRecommendations
+            ->pluck('videos')
+            ->flatten(1)
+            ->values();
 
         return response()->json([
             'subtopic_status' => $subtopic_student_status ? $subtopic_student_status->evaluation_status : 'not attempted',
             'subtopic_difficulty' => $subtopic->subtopic_difficulty ?? null,
             'subtopic_title' => $subtopic->title,
             'subtopic_evaluation' => $subtopic_student_status ? $subtopic_student_status->subtopic_evaluation : null,
-            'recommendations' => $recommendation_videos,
+            'teacher_recommendations' => $teacherRecommendations,
+            // 'recommendations' => $recommendation_videos,
 
         ]);
     }

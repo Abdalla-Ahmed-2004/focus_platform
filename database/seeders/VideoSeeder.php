@@ -13,9 +13,12 @@ class VideoSeeder extends Seeder
      */
     public function run(): void
     {
-        // Ensure each teacher has at least one video
         $teachers = Teacher::all();
         foreach ($teachers as $teacher) {
+            if ($teacher->videos()->exists()) {
+                continue;
+            }
+
             Video::factory()->create([
                 'teacher_id' => $teacher->id,
             ]);

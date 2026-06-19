@@ -12,6 +12,15 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class StudentAnswerFactory extends Factory
 {
+    protected float $correctnessRate = 0.7;
+
+    public function correctnessRate(float $rate): static
+    {
+        $this->correctnessRate = max(0.0, min(1.0, $rate));
+
+        return $this;
+    }
+
     /**
      * Define the model's default state.
      *
@@ -45,12 +54,22 @@ class StudentAnswerFactory extends Factory
             'answer_text' => function (array $attributes) {
                 $question = \App\Models\Question::find($attributes['question_id']);
                 if ($question) {
-                    return $this->faker->randomElement([
+                    $options = array_values(array_filter([
                         $question->option_1,
                         $question->option_2,
                         $question->option_3,
-                        $question->option_4
-                    ]);
+                        $question->option_4,
+                    ]));
+
+                    if ($this->faker->randomFloat(2, 0, 1) <= $this->correctnessRate && in_array($question->correct_answer, $options, true)) {
+                        return $question->correct_answer;
+                    }
+
+                    $wrongOptions = array_values(array_filter($options, fn($option) => $option !== $question->correct_answer));
+
+                    return !empty($wrongOptions)
+                        ? $this->faker->randomElement($wrongOptions)
+                        : $this->faker->word();
                 }
                 return $this->faker->word();
             },

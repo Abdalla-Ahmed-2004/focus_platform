@@ -14,6 +14,10 @@ class QuestionSeeder extends Seeder
     {
         $quizzes = \App\Models\Quiz::all();
         foreach ($quizzes as $quiz) {
+            if ($quiz->questions()->exists()) {
+                continue;
+            }
+
             $subtopic = \App\Models\Subtopic::where('lesson_id', $quiz->lesson_id)->first();
             if (!$subtopic) {
                 $subtopic = \App\Models\Subtopic::factory()->create(['lesson_id' => $quiz->lesson_id]);

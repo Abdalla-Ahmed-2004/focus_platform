@@ -19,6 +19,7 @@ use App\Models\QuizAttempt;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\Video;
+use App\Models\Subtopic;
 use Illuminate\Support\Facades\Cache;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -190,5 +191,52 @@ class TeacherController extends Controller
     public function destroy(Teacher $teacher)
     {
         //
+    }
+    public function subtopicEvaluation()
+    {
+        $teacher = JWTAuth::user()->teacher;
+
+        $teacher_subtopics = Subtopic::query()
+            ->whereHas('students_answers', function ($query) use ($teacher) {
+                $query->whereHas('quiz', function ($quizQuery) use ($teacher) {
+                    $quizQuery->where('teacher_id', $teacher->id);
+                });
+            })
+            ->with(['students_answers' => function ($query) use ($teacher) {
+                $query->whereHas('quiz', function ($quizQuery) use ($teacher) {
+                    $quizQuery->where('teacher_id', $teacher->id);
+                })->with(['student', 'quiz', 'question']);
+            }])
+            ->get(['id', 'lesson_id', 'title']);
+
+        $teacher_subtopics = $teacher_subtopics->map(function ($subtopic) {
+            $answers = $subtopic->students_answers;
+            $correctAnswersCount = $answers->where('correctness', true)->count();
+            $mean = $answers->isNotEmpty()
+                ? round($answers->avg(fn($answer) => (int) $answer->correctness) * 100, 2)
+                : 0;
+
+            return [
+                'subtopic_id' => $subtopic->id,
+                'subtopic_title' => $subtopic->title,
+                'lesson_id' => $subtopic->lesson_id,
+                'answers_count' => $answers->count(),
+                'correct_answers_count' => $correctAnswersCount,
+                'mean_correctness' => $mean,
+                // 'answers' => $answers->map(function ($answer) {
+                //     return [
+                //         'id' => $answer->id,
+                //         'student_id' => $answer->student_id,
+                //         'student_name' => $answer->student?->user?->name,
+                //         'quiz_id' => $answer->quiz_id,
+                //         'question_id' => $answer->question_id,
+                //         'answer_text' => $answer->answer_text,
+                //         'correctness' => (int) $answer->correctness,
+                //     ];
+                // })->values(),
+            ];
+        })->values();
+
+        return response()->json($teacher_subtopics);
     }
 }

@@ -11,4 +11,5 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('videos', VideoController::class)->middleware(['role:teacher']);
     Route::apiResource('quizzes', QuizController::class)->middleware(['role:teacher']);
     Route::get('quizzes-details/{quiz}', [TeacherController::class, 'showQuiz'])->scopeBindings();
+    Route::get('subtopic-answers', [TeacherController::class, 'subtopicEvaluation'])->middleware(['role:teacher']);
 });

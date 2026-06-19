@@ -20,11 +20,11 @@ class Teacher extends Model
     {
         static::saved(function ($teacher) {
             if ($teacher->wasChanged('subject_id')) {
-                cache()->forget('teachers_subject_'.$teacher->getOriginal('subject_id').'_all');
+                cache()->forget('teachers_subject_' . $teacher->getOriginal('subject_id') . '_all');
             }
-            cache()->forget('teachers_subject_'.$teacher->subject_id.'_all');
+            cache()->forget('teachers_subject_' . $teacher->subject_id . '_all');
         });
-        static::deleted(fn ($teacher) => cache()->forget('teachers_subject_'.$teacher->subject_id.'_all'));
+        static::deleted(fn($teacher) => cache()->forget('teachers_subject_' . $teacher->subject_id . '_all'));
     }
 
     public function user()
@@ -61,5 +61,10 @@ class Teacher extends Model
     public function lessonAttempts()
     {
         return $this->hasMany(LessonAttempt::class);
+    }
+
+    public function tsubtopicEvaluations()
+    {
+        return $this->hasMany(TsubtopicEvaluation::class);
     }
 }
