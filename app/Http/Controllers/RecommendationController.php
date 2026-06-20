@@ -50,6 +50,7 @@ class RecommendationController extends Controller
                 'videos' => $videos->map(function ($video) use ($evaluation, $teacher) {
                     return [
                         'id' => $video->id,
+                        'lesson_id' => $video->lesson_id,
                         'title' => $video->title,
                         'url' => $video->url,
                         'duration' => $video->duration,
@@ -81,16 +82,24 @@ class RecommendationController extends Controller
     public function recommendation_questions(Subtopic $subtopic)
     {
         $student = JWTAuth::user()->student;
-        $subtopic_student_status = $subtopic->studentEvaluations()->where('student_id', $student->id)->latest()->first();
+        // return($subtopic);
+        $subtopic_student_status =  $student->subtopicEvaluations()
+            ->latest('student_subtopic_evaluations.created_at')
+            ->get()
+            ->unique('subtopic_id')
+            ->values();
+            // return($subtopic_student_status);
         $recommendation_questions = [];
-        switch ($subtopic_student_status->evaluation_status) {
+        $evaluation_status = $subtopic_student_status->where('subtopic_id', $subtopic->id)->first()->toArray();
+        // return($subtopic->questions()->whereIn('difficulty', [2,1,3])->get());
+        switch ($evaluation_status['evaluation_status']) {
             case 'Red (weak skill)':
                 $recommendation_questions = $subtopic->questions()->where('difficulty', 1)->inRandomOrder()->limit(30)->get();
                 break;
             case 'Developing (On Track)':
                 $recommendation_questions = $subtopic->questions()->whereIn('difficulty', [1, 2])->inRandomOrder()->limit(30)->get();
                 break;
-            case 'Green (strong skill)':
+            case 'Green (Mastered)':
                 $recommendation_questions = $subtopic->questions()->whereIn('difficulty', [1, 2, 3])->inRandomOrder()->limit(30)->get();
                 break;
             default:
@@ -98,10 +107,10 @@ class RecommendationController extends Controller
         }
 
         return response()->json([
-            'subtopic_status' => $subtopic_student_status ? $subtopic_student_status->evaluation_status : 'not attempted',
+            'subtopic_status' => $evaluation_status,
             'subtopic_difficulty' => $subtopic->subtopic_difficulty ?? null,
             'subtopic_title' => $subtopic->title,
-            'subtopic_evaluation' => $subtopic_student_status ? $subtopic_student_status->subtopic_evaluation : null,
+            'subtopic_evaluation' => $evaluation_status['subtopic_evaluation'] ?? null,
             'recommendation_questions' => $recommendation_questions,
 
         ]);

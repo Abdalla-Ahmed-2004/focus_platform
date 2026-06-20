@@ -27,11 +27,11 @@ class QuizAttempt extends Model
     {
         static::saved(function ($attempt) {
             if ($attempt->wasChanged('student_id')) {
-                cache()->forget('quiz_attempts_student_'.$attempt->getOriginal('student_id').'_all');
+                cache()->forget('quiz_attempts_student_' . $attempt->getOriginal('student_id') . '_all');
             }
-            cache()->forget('quiz_attempts_student_'.$attempt->student_id.'_all');
+            cache()->forget('quiz_attempts_student_' . $attempt->student_id . '_all');
         });
-        static::deleted(fn ($attempt) => cache()->forget('quiz_attempts_student_'.$attempt->student_id.'_all'));
+        static::deleted(fn($attempt) => cache()->forget('quiz_attempts_student_' . $attempt->student_id . '_all'));
     }
 
     public function student()

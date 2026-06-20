@@ -29,31 +29,35 @@ class StudentController extends Controller
         $student = JWTAuth::user()->student;
         $cacheKey = 'student:dashboard:' . $student->id;
 
-        $lessonAttempts = $student->lessonAttempts();
-        $student_evaluations = $student->subtopicEvaluations()->latest('created_at')->get()->unique('subtopic_id')->groupBy('code');
+        $data = Cache::remember($cacheKey, 900, function () use ($student) {
+            $lessonAttempts = $student->lessonAttempts();
+            $studentEvaluations = $student->subtopicEvaluations()
+                ->latest('student_subtopic_evaluations.created_at')
+                ->get()
+                ->unique('subtopic_id')
+                ->values();
 
-        $quizAttempts = $student->quizzesAttempt()->with('quiz')->latest('created_at')->get();
+            $quizAttempts = $student->quizzesAttempt()
+                ->with('quiz')
+                ->latest('created_at')
+                ->get();
 
-
-        
-        // return [$student_evaluations, $lessonAttempts];
-    $data=Cache::remember($cacheKey, 900, function () use ($student, $lessonAttempts, $student_evaluations, $quizAttempts) {
-       
-        return [
-                'lessonAttempts'=> $lessonAttempts,
-                'subtopicEvaluations'=>$student_evaluations,
+            return [
+                'lessonAttempts' => $lessonAttempts,
+                'subtopicEvaluations' => $studentEvaluations->groupBy('code')->values(),
                 'quizAttempts' => $quizAttempts,
                 'quizAttempts_count' => $quizAttempts->count(),
-        ];
-    });
-    return response()->json([
-        'message' => 'Student dashboard data retrieved successfully',
-        'student' => new StudentResource($student),
-        'lesson_attempts' => $data['lessonAttempts'],
-        'subtopic_evaluations' => $data['subtopicEvaluations'],
-        'quiz_attempts' => $data['quizAttempts'],
-        'quiz_attempts_count' => $data['quizAttempts_count'],
-    ]);
+            ];
+        });
+
+        return response()->json([
+            'message' => 'Student dashboard data retrieved successfully',
+            'student' => new StudentResource($student),
+            'lesson_attempts' => $data['lessonAttempts'],
+            'subtopic_evaluations' => $data['subtopicEvaluations'],
+            'quiz_attempts' => $data['quizAttempts'],
+            'quiz_attempts_count' => $data['quizAttempts_count'],
+        ]);
     }
 
     /**
@@ -307,25 +311,25 @@ class StudentController extends Controller
             // return((int)($response->json()[0]['skill_id']));
 
             if ($response->successful()) {
-            $evaluation_ids= [];
+                $evaluation_ids = [];
 
                 foreach ($response->json() as $item) {
                     // Allow multiple key names for status and log each item
                     $status = $item['status'] ?? $item['evaluation_status'] ?? null;
                     Log::debug('AI prediction item', $item);
 
-                   $evaluation= StudentSubtopicEvaluation::create(
+                    $evaluation = StudentSubtopicEvaluation::create(
                         [
                             'student_id' => $userId,
                             'subtopic_id' => $item['skill_id'],
-                       
+
                             'subtopic_evaluation' =>  round($item['mastery_score']) ?? null,
                             'evaluation_status' => $status,
                             'question_count' =>  $item['total_attempts'] ?? null,
                             'correct_count' =>   $item['total_correct'] ?? null,
                         ]
                     );
-                    $evaluation_ids[]=$evaluation->id ?? null;
+                    $evaluation_ids[] = $evaluation->id ?? null;
                 }
 
                 // dd($evaluation_ids);
@@ -340,7 +344,7 @@ class StudentController extends Controller
                 //         'correct_count' => $evaluation->correct_count,
                 //     ];
                 // });
-                return $student->subtopicEvaluations()->whereIn('subtopic_id',$quiz_subtopics)->latest('created_at')->get()->unique('subtopic_id')->map(function ($evaluation) use ($subtopics) {
+                return $student->subtopicEvaluations()->whereIn('subtopic_id', $quiz_subtopics)->latest('created_at')->get()->unique('subtopic_id')->map(function ($evaluation) use ($subtopics) {
                     return [
                         'subtopic_id' => $evaluation->subtopic_id,
                         'subtopic_difficulty' => $subtopics->get($evaluation->subtopic_id)->subtopic_difficulty ?? null,

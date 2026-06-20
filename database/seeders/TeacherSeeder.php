@@ -84,7 +84,7 @@ class TeacherSeeder extends Seeder
                             'option_3' => $templateQuestion->option_3,
                             'option_4' => $templateQuestion->option_4,
                             'correct_answer' => $templateQuestion->correct_answer,
-                            'difficulty' => $templateQuestion->difficulty,
+                            'difficulty' => fake()->randomElement([1, 2, 3]),
                             'cognitive_skill' => $templateQuestion->cognitive_skill,
                         ]
                     );

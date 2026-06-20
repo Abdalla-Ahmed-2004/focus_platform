@@ -45,18 +45,34 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         $credentials = $request->validated();
-       
+
         if (! $token = JWTAuth::attempt($credentials)) {
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
 
-        return response()->json([
+        $user = JWTAuth::user();
+        $role = $user->getRoleNames()->first();
 
-            'user' => JWTAuth::user()->hasRole('teacher') ?
-                new TeacherResource(JWTAuth::user()->teacher) :
-                new StudentResource(JWTAuth::user()->student),
+        $profile = match ($role) {
+            'teacher' => new TeacherResource($user->teacher),
+            'student' => new StudentResource($user->student),
+            'admin' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+            default => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+        };
+
+        return response()->json([
+            'user' => $profile,
+            'role' => $role,
             'token' => $token,
-        ], 201);
+        ], 200);
     }
 
     public function logout()
