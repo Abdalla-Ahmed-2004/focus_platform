@@ -124,8 +124,9 @@ copy .env.example .env
 php artisan key:generate
 php artisan jwt:secret
 php artisan migrate --seed
-npm install
-npm run dev
+php .\artisan subtopic:update-difficulty
+php .\artisan subtopic:update-teacher-skill-evaluation
+php .\artisan make:admin
 php artisan serve
 ```
 
